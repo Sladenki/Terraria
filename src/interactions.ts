@@ -1,0 +1,86 @@
+import { PIXEL, REACH_TILES, WORLD_HEIGHT_TILES, WORLD_WIDTH_TILES } from './constants'
+import { tileAt, world } from './world'
+import type { Player } from './types'
+import { consumeFromSelected, addToInventory } from './inventory'
+import type { InventorySlot } from './inventory'
+
+export type HoverState = { x: number; y: number; tileX: number | null; tileY: number | null }
+
+export function createHover(): HoverState {
+  return { x: 0, y: 0, tileX: null, tileY: null }
+}
+
+export function bindMouse(
+  canvas: HTMLCanvasElement,
+  camera: { x: number; y: number },
+  hover: HoverState,
+  player: Player,
+  hotbar: InventorySlot[],
+  selectedRef: { value: number },
+) {
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect()
+    const mx = e.clientX - rect.left
+    const my = e.clientY - rect.top
+    hover.x = mx
+    hover.y = my
+    const worldX = mx + camera.x
+    const worldY = my + camera.y
+    hover.tileX = Math.floor(worldX / PIXEL)
+    hover.tileY = Math.floor(worldY / PIXEL)
+  })
+
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault())
+  canvas.addEventListener('mousedown', (e) => {
+    if (hover.tileX === null || hover.tileY === null) return
+    const tx = hover.tileX
+    const ty = hover.tileY
+    if (!withinReach(player, tx, ty)) return
+
+    if (e.button === 0) {
+      if (tileAt(tx, ty) === 1) {
+        world[ty][tx] = 0
+        addToInventory(hotbar, 'dirt', 1)
+      }
+    } else if (e.button === 2) {
+      if (canPlaceAt(player, tx, ty)) {
+        if (consumeFromSelected(hotbar, selectedRef.value, 'dirt', 1)) {
+          world[ty][tx] = 1
+        }
+      }
+    }
+  })
+
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault()
+    if (e.deltaY > 0) selectedRef.value = (selectedRef.value + 1) % hotbar.length
+    else if (e.deltaY < 0) selectedRef.value = (selectedRef.value - 1 + hotbar.length) % hotbar.length
+  }, { passive: false })
+}
+
+export function withinReach(player: Player, tileX: number, tileY: number): boolean {
+  const pcx = player.x + player.w / 2
+  const pcy = player.y + player.h / 2
+  const tcx = tileX * PIXEL + PIXEL / 2
+  const tcy = tileY * PIXEL + PIXEL / 2
+  const dx = (tcx - pcx) / PIXEL
+  const dy = (tcy - pcy) / PIXEL
+  return Math.hypot(dx, dy) <= REACH_TILES
+}
+
+export function canPlaceAt(player: Player, tileX: number, tileY: number): boolean {
+  if (tileX < 0 || tileY < 0 || tileX >= WORLD_WIDTH_TILES || tileY >= WORLD_HEIGHT_TILES) return false
+  if (tileAt(tileX, tileY) !== 0) return false
+  const tileLeft = tileX * PIXEL
+  const tileTop = tileY * PIXEL
+  const tileRight = tileLeft + PIXEL
+  const tileBottom = tileTop + PIXEL
+  const pLeft = player.x
+  const pTop = player.y
+  const pRight = player.x + player.w
+  const pBottom = player.y + player.h
+  const intersect = !(tileRight <= pLeft || tileLeft >= pRight || tileBottom <= pTop || tileTop >= pBottom)
+  return !intersect
+}
+
+
