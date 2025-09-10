@@ -16,4 +16,18 @@ export const TILE = {
 } as const
 export type TileId = typeof TILE[keyof typeof TILE]
 
+// --- Physics tuning ---
+export const PHYS = {
+  gravity: 0.6,
+  maxFallSpeed: 14,
+  maxRunSpeed: 4.2,
+  accelGround: 0.65,
+  accelAir: 0.35,
+  frictionGround: 0.65,
+  jumpSpeed: 11,
+  jumpCutMultiplier: 0.5, // when releasing jump early
+  coyoteFrames: 6,
+  jumpBufferFrames: 8,
+} as const
+
 

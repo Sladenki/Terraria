@@ -15,6 +15,8 @@ export type Player = {
   w: number
   h: number
   onGround: boolean
+  coyote: number
+  jumpBuffer: number
 }
 
 
