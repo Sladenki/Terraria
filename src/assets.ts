@@ -54,23 +54,39 @@ export function extractForestVariants(img: HTMLImageElement, tilePx: number): { 
   octx.drawImage(img, 0, 0)
   const cols = Math.floor(img.naturalWidth / tilePx)
   const rows = Math.floor(img.naturalHeight / tilePx)
-  const found: Rect[] = []
+
+  type Score = { rect: Rect; greenScore: number; woodScore: number; coverage: number }
+  const candidates: Score[] = []
   for (let ty = 0; ty < rows; ty += 1) {
     for (let tx = 0; tx < cols; tx += 1) {
       const sx = tx * tilePx
       const sy = ty * tilePx
       const data = octx.getImageData(sx, sy, tilePx, tilePx).data
-      for (let i = 3; i < data.length; i += 4) {
-        if (data[i] > 32) {
-          found.push({ sx, sy, sw: tilePx, sh: tilePx })
-          break
+      let rSum = 0, gSum = 0, bSum = 0, count = 0
+      for (let i = 0; i < data.length; i += 4) {
+        const a = data[i + 3]
+        if (a > 32) {
+          rSum += data[i]
+          gSum += data[i + 1]
+          bSum += data[i + 2]
+          count += 1
         }
       }
-      if (found.length >= 2) break
+      if (count === 0) continue
+      const r = rSum / count, g = gSum / count, b = bSum / count
+      const coverage = count / (tilePx * tilePx)
+      const greenScore = (g - Math.max(r, b)) * coverage
+      const woodScore = (r + g - 2 * b) * coverage - Math.abs(r - g) * 0.25
+      candidates.push({ rect: { sx, sy, sw: tilePx, sh: tilePx }, greenScore, woodScore, coverage })
     }
-    if (found.length >= 2) break
   }
-  return { wood: found[0] ?? null, leaves: found[1] ?? null }
+  // filter out very sparse tiles (likely UI/icons)
+  const filtered = candidates.filter(c => c.coverage > 0.15)
+  const leavesCand = filtered.reduce((best, c) => (c.greenScore > (best?.greenScore ?? -1e9) ? c : best), null as Score | null)
+  // avoid picking same tile for wood
+  const woodFiltered = filtered.filter(c => !leavesCand || c.rect.sx !== leavesCand.rect.sx || c.rect.sy !== leavesCand.rect.sy)
+  const woodCand = woodFiltered.reduce((best, c) => (c.woodScore > (best?.woodScore ?? -1e9) ? c : best), null as Score | null)
+  return { wood: woodCand?.rect ?? null, leaves: leavesCand?.rect ?? null }
 }
 
 
