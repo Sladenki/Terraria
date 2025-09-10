@@ -1,7 +1,7 @@
 import { PIXEL, REACH_TILES, WORLD_HEIGHT_TILES, WORLD_WIDTH_TILES, TILE } from './constants'
 import { tileAt, setTile } from './world'
 import type { Player } from './types'
-import { consumeFromSelected, addToInventory } from './inventory'
+import { consumeFromSelected } from './inventory'
 import type { InventorySlot } from './inventory'
 
 export type HoverState = { x: number; y: number; tileX: number | null; tileY: number | null }
@@ -17,6 +17,7 @@ export function bindMouse(
   player: Player,
   hotbar: InventorySlot[],
   selectedRef: { value: number },
+  emitDrop: (id: 'dirt' | 'wood' | 'leaves', worldX: number, worldY: number) => void,
 ) {
   canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect()
@@ -39,10 +40,14 @@ export function bindMouse(
 
     if (e.button === 0) {
       const t = tileAt(tx, ty)
-      if (t === TILE.DIRT) addToInventory(hotbar, 'dirt', 1)
-      if (t === TILE.WOOD) addToInventory(hotbar, 'wood', 1)
-      if (t === TILE.LEAVES) addToInventory(hotbar, 'leaves', 1)
-      if (t !== TILE.EMPTY) setTile(tx, ty, TILE.EMPTY)
+      if (t !== TILE.EMPTY) {
+        const wx = tx * PIXEL + PIXEL / 2
+        const wy = ty * PIXEL + PIXEL / 2
+        if (t === TILE.DIRT) emitDrop('dirt', wx, wy)
+        if (t === TILE.WOOD) emitDrop('wood', wx, wy)
+        if (t === TILE.LEAVES) emitDrop('leaves', wx, wy)
+        setTile(tx, ty, TILE.EMPTY)
+      }
     } else if (e.button === 2) {
       if (canPlaceAt(player, tx, ty)) {
         // place item from selected slot priority: dirt -> wood -> leaves based on slot

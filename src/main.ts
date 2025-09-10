@@ -8,6 +8,9 @@ import { createHotbar } from './inventory'
 import { createInput } from './input'
 import { bindMouse, canPlaceAt, createHover, withinReach } from './interactions'
 import { drawWorld as renderWorld, drawTileHighlight } from './render'
+import { drawDrops, tryPickupDrops, updateDrops } from './drops'
+import type { Drop } from './drops'
+import { addToInventory } from './inventory'
 
 const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -28,12 +31,16 @@ const hotbar = createHotbar()
 const selectedRef = { value: 0 }
 const input = createInput(selectedRef)
 const hover = createHover()
+const drops: Drop[] = []
 
 function loop() {
   moveAndCollide(player, input)
   updateCamera(camera, canvas, player)
 
   renderWorld(ctx, canvas, camera, images, player, characterFrame, hover, hotbar, selectedRef.value)
+  drawDrops(ctx, camera, images, drops)
+  updateDrops(drops, player)
+  tryPickupDrops(drops, player, (id, n) => addToInventory(hotbar, id, n))
 
   const tx = hover.tileX
   const ty = hover.tileY
@@ -57,7 +64,10 @@ loadImages(assetsToLoad)
     const variants = extractForestVariants(images.forest, TILE_SIZE)
     ;(images as any).wood = variants.wood ? cropImage(images.forest, variants.wood) : images.forest
     ;(images as any).leaves = variants.leaves ? cropImage(images.forest, variants.leaves) : images.forest
-    bindMouse(canvas, camera, hover, player, hotbar, selectedRef)
+    bindMouse(canvas, camera, hover, player, hotbar, selectedRef, (id, x, y) => {
+      drops.push({ id, x, y, vx: (Math.random()-0.5)*2, vy: -Math.random()*2, w: Math.max(PIXEL-6,8), h: Math.max(PIXEL-6,8), age: 0 })
+    })
+    // intercept breaking to spawn drops by monkey-patching setTile via interactions -> We'll instead listen globally in interactions change
     loop()
   })
   .catch((err) => {
