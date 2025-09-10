@@ -1,0 +1,16 @@
+{
+  "name": "ter_game",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "esbuild src/main.ts --bundle --sourcemap --outfile=public/bundle.js --servedir=public --serve=5173",
+    "build": "esbuild src/main.ts --bundle --minify --outfile=public/bundle.js",
+    "vite-dev": "vite"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.2"
+  }
+}
