@@ -1,5 +1,5 @@
-import { PIXEL, REACH_TILES, WORLD_HEIGHT_TILES, WORLD_WIDTH_TILES } from './constants'
-import { tileAt, world } from './world'
+import { PIXEL, REACH_TILES, WORLD_HEIGHT_TILES, WORLD_WIDTH_TILES, TILE } from './constants'
+import { tileAt, setTile } from './world'
 import type { Player } from './types'
 import { consumeFromSelected, addToInventory } from './inventory'
 import type { InventorySlot } from './inventory'
@@ -38,15 +38,18 @@ export function bindMouse(
     if (!withinReach(player, tx, ty)) return
 
     if (e.button === 0) {
-      if (tileAt(tx, ty) === 1) {
-        world[ty][tx] = 0
-        addToInventory(hotbar, 'dirt', 1)
-      }
+      const t = tileAt(tx, ty)
+      if (t === TILE.DIRT) addToInventory(hotbar, 'dirt', 1)
+      if (t === TILE.WOOD) addToInventory(hotbar, 'wood', 1)
+      if (t === TILE.LEAVES) addToInventory(hotbar, 'leaves', 1)
+      if (t !== TILE.EMPTY) setTile(tx, ty, TILE.EMPTY)
     } else if (e.button === 2) {
       if (canPlaceAt(player, tx, ty)) {
-        if (consumeFromSelected(hotbar, selectedRef.value, 'dirt', 1)) {
-          world[ty][tx] = 1
-        }
+        // place item from selected slot priority: dirt -> wood -> leaves based on slot
+        const id = hotbar[selectedRef.value].id
+        if (id === 'dirt' && consumeFromSelected(hotbar, selectedRef.value, 'dirt', 1)) setTile(tx, ty, TILE.DIRT)
+        else if (id === 'wood' && consumeFromSelected(hotbar, selectedRef.value, 'wood', 1)) setTile(tx, ty, TILE.WOOD)
+        else if (id === 'leaves' && consumeFromSelected(hotbar, selectedRef.value, 'leaves', 1)) setTile(tx, ty, TILE.LEAVES)
       }
     }
   })

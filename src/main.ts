@@ -1,5 +1,5 @@
 import { PIXEL, TILE_SIZE } from './constants'
-import { assetsToLoad, findFirstOpaqueTile, loadImages } from './assets'
+import { assetsToLoad, findFirstOpaqueTile, loadImages, extractForestVariants } from './assets'
 import { generateWorld } from './world'
 import type { Rect, ImageMap } from './types'
 import { player, moveAndCollide } from './player'
@@ -53,9 +53,25 @@ loadImages(assetsToLoad)
   .then((loaded) => {
     images = loaded
     characterFrame = findFirstOpaqueTile(images.character, TILE_SIZE)
+    // extract two variants from forest.png and alias into images
+    const variants = extractForestVariants(images.forest, TILE_SIZE)
+    ;(images as any).wood = variants.wood ? cropImage(images.forest, variants.wood) : images.forest
+    ;(images as any).leaves = variants.leaves ? cropImage(images.forest, variants.leaves) : images.forest
     bindMouse(canvas, camera, hover, player, hotbar, selectedRef)
     loop()
   })
   .catch((err) => {
     console.error('Failed to load images', err)
   })
+
+// create a temporary cropped image from a spritesheet rect
+function cropImage(sheet: HTMLImageElement, rect: Rect): HTMLImageElement {
+  const off = document.createElement('canvas')
+  off.width = rect.sw
+  off.height = rect.sh
+  const octx = off.getContext('2d')!
+  octx.drawImage(sheet, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, rect.sw, rect.sh)
+  const img = new Image()
+  img.src = off.toDataURL()
+  return img
+}

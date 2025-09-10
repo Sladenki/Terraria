@@ -1,4 +1,4 @@
-import { PIXEL, TILE_SIZE } from './constants'
+import { PIXEL, TILE_SIZE, TILE } from './constants'
 import { tileAt } from './world'
 import type { ImageMap, Player, Rect } from './types'
 import { drawHotbar, InventorySlot } from './inventory'
@@ -28,10 +28,14 @@ export function drawWorld(
     for (let tx = 0; tx < tilesX; tx += 1) {
       const worldTX = startTileX + tx
       const worldTY = startTileY + ty
-      if (tileAt(worldTX, worldTY) === 1) {
+      const t = tileAt(worldTX, worldTY)
+      if (t !== TILE.EMPTY) {
         const dx = (worldTX * PIXEL) - camera.x
         const dy = (worldTY * PIXEL) - camera.y
-        ctx.drawImage(images.dirt, 0, 0, TILE_SIZE, TILE_SIZE, Math.round(dx), Math.round(dy), PIXEL, PIXEL)
+        let img = images.dirt
+        if (t === TILE.WOOD) img = (images as any).wood ?? images.forest
+        else if (t === TILE.LEAVES) img = (images as any).leaves ?? images.forest
+        ctx.drawImage(img, 0, 0, TILE_SIZE, TILE_SIZE, Math.round(dx), Math.round(dy), PIXEL, PIXEL)
       }
     }
   }

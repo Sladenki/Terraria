@@ -1,7 +1,7 @@
 import { PIXEL, TILE_SIZE } from './constants'
 import type { ImageMap } from './types'
 
-export type ItemId = 'dirt'
+export type ItemId = 'dirt' | 'wood' | 'leaves'
 export type InventorySlot = { id: ItemId | null; count: number }
 
 export function createHotbar(): InventorySlot[] {
@@ -52,9 +52,10 @@ export function drawHotbar(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElem
     ctx.lineWidth = i === selected ? 3 : 2
     ctx.strokeRect(x + 1, y + 1, boxSize - 2, boxSize - 2)
     const slot = hotbar[i]
-    if (slot.id === 'dirt' && slot.count > 0) {
+    if (slot.id && slot.count > 0) {
       const pad = 6
-      ctx.drawImage(images.dirt, 0, 0, TILE_SIZE, TILE_SIZE, x + pad, y + pad, boxSize - pad * 2, boxSize - pad * 2)
+      const img = slot.id === 'dirt' ? images.dirt : slot.id === 'wood' ? (images as any).wood ?? images.forest : (images as any).leaves ?? images.forest
+      ctx.drawImage(img, 0, 0, TILE_SIZE, TILE_SIZE, x + pad, y + pad, boxSize - pad * 2, boxSize - pad * 2)
       ctx.fillStyle = '#ffffff'
       ctx.font = `${Math.floor(boxSize / 3)}px monospace`
       ctx.textAlign = 'right'
