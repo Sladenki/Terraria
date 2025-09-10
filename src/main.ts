@@ -5,10 +5,14 @@ const TILE_SIZE = 16
 const SCALE = 2
 const PIXEL = TILE_SIZE * SCALE
 
-canvas.width = 50 * PIXEL
-canvas.height = 28 * PIXEL
-canvas.style.width = `${canvas.width}px`
-canvas.style.height = `${canvas.height}px`
+function resizeCanvas() {
+  const w = Math.floor(window.innerWidth / PIXEL) * PIXEL
+  const h = Math.floor(window.innerHeight / PIXEL) * PIXEL
+  canvas.width = Math.max(w, PIXEL * 20)
+  canvas.height = Math.max(h, PIXEL * 12)
+}
+resizeCanvas()
+window.addEventListener('resize', resizeCanvas)
 
 type ImageMap = Record<string, HTMLImageElement>
 
